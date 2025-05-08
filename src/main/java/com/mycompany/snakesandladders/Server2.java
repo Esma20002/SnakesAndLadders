@@ -24,10 +24,12 @@ import java.util.Random;
 public class Server2 {
     private ServerSocket serverSocket;
     private final List<Socket> clients = new ArrayList<>();
-    private final List<PrintWriter> writers = new ArrayList<>();//
+    private final List<PrintWriter> writers = new ArrayList<>();
     private final List<String> playerNames = new ArrayList<>();
     private int currentPlayer = 0; // sıra 0. oyuncudan başlasın
 private List<BufferedReader> readers = new ArrayList<>();
+private GameManager gameManager = new GameManager();//
+
 
 
 
@@ -43,6 +45,14 @@ private List<BufferedReader> readers = new ArrayList<>();
 
         System.out.println("Oyuncu " + (playerId + 1) + " bağlandı: " + name);
         out.println("Hoş geldin, " + name + "!");
+        
+        
+        // 🔽 TAM BURAYA KOYACAKSIN:
+        if (playerNames.size() == 2 && playerId == 1) {
+            broadcast("Oyun başladı! Oyuncular: " + playerNames.get(0) + " vs " + playerNames.get(1));
+            sendTo(0, "Sıra sende!");
+            sendTo(1, "Bekle...");
+        }
 
         if (playerId == 0) {
             out.println("2. oyuncu bekleniyor...");
@@ -52,22 +62,44 @@ private List<BufferedReader> readers = new ArrayList<>();
             }
         }
 
-        // İki oyuncunun adı geldiyse oyun başlasın
-          if (playerNames.size() == 2 && playerId == 1) {
-    broadcast("Oyun başladı! Oyuncular: " + playerNames.get(0) + " vs " + playerNames.get(1));
-}
-          while (true) {
+        
+while (true) {
     String message = in.readLine();
     if (message == null) break;
 
-    if (message.equals("roll") && playerId == currentPlayer) {
-        int dice = new Random().nextInt(6) + 1;
-        broadcast(playerNames.get(playerId) + " zar attı: " + dice);
-        currentPlayer = (currentPlayer + 1) % 2;
-        sendTo(currentPlayer, "Sıra sende!");
-        sendTo((currentPlayer + 1) % 2, "Bekle...");
+    // Eğer oyun başlamamışsa roll mesajını kabul etme
+    if (playerNames.size() < 2) {
+        out.println("Oyun henüz başlamadı. Lütfen bekleyin...");
+        continue;
     }
+
+//    if (message.equals("roll") && playerId == currentPlayer) {
+//        int dice = new Random().nextInt(6) + 1;
+//        broadcast(playerNames.get(playerId) + " zar attı: " + dice);
+//        currentPlayer = (currentPlayer + 1) % 2;
+//        sendTo(currentPlayer, "Sıra sende!");
+//        sendTo((currentPlayer + 1) % 2, "Bekle...");
+//    }
+
+if (message.equals("roll") && playerId == currentPlayer) {
+    int dice = new Random().nextInt(6) + 1;
+    int newPos = gameManager.movePlayer(playerId, dice);
+
+    broadcast(playerNames.get(playerId) + " zar attı: " + dice + ", yeni pozisyon: " + newPos);
+
+    // Kazanma kontrolü
+    if (gameManager.hasPlayerWon(playerId)) {
+        broadcast("🏆 " + playerNames.get(playerId) + " oyunu kazandı!");
+        return;
+    }
+
+    currentPlayer = (currentPlayer + 1) % 2;
+    sendTo(currentPlayer, "Sıra sende!");
+    sendTo((currentPlayer + 1) % 2, "Bekle...");
 }
+
+}
+
 
 
 
