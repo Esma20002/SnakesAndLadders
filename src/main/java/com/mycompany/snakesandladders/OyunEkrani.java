@@ -12,12 +12,14 @@ import javax.swing.SwingConstants;
  * @author nesma
  */
 public class OyunEkrani extends javax.swing.JFrame {
-
+//    private Client client;
     /**
      * Creates new form OyunEkrani
      */
     public OyunEkrani() {
         initComponents();
+//        client = new Client(this);
+        
     }
 
     /**
