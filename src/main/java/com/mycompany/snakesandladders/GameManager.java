@@ -13,22 +13,34 @@ import java.util.Random;
  * @author nesma
  */
 public class GameManager {
-    private int[] positions = new int[2]; // Oyuncu 0 ve 1'in pozisyonları (1–100)
+
+    private int[] positions = new int[]{0, 0}; // Oyuncular tahtanın dışında başlar
+    //private int[] positions = new int[2]; // Oyuncu 0 ve 1'in pozisyonları (1–100)
     private final Map<Integer, Integer> snakes = new HashMap<>();
     private final Map<Integer, Integer> ladders = new HashMap<>();
     private final Random random = new Random();
 
     public GameManager() {
-        positions[0] = 1; // Oyuncu 1 başlangıçta 1. karede
-        positions[1] = 1; // Oyuncu 2 de aynı şekilde
 
         // Örnek yılanlar
-        snakes.put(99, 21);
-        snakes.put(76, 32);
+        snakes.put(29, 9);
+        snakes.put(38, 15);
+        snakes.put(47, 5);
+        snakes.put(53, 33);
+        snakes.put(62, 37);
+        snakes.put(86, 54);
+        snakes.put(92, 70);
+        snakes.put(97, 25);
 
         // Örnek merdivenler
-        ladders.put(3, 22);
-        ladders.put(15, 44);
+        ladders.put(2, 23);
+        ladders.put(8, 34);
+        ladders.put(20, 77);
+        ladders.put(32, 68);
+        ladders.put(41, 79);
+        ladders.put(74, 88);
+        ladders.put(85, 95);
+        ladders.put(82, 100);
     }
 
     // Zar at ve yeni pozisyonu hesapla
@@ -66,4 +78,3 @@ public class GameManager {
         return positions[playerId] == 100;
     }
 }
-

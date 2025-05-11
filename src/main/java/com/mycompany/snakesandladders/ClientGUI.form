@@ -44,6 +44,8 @@
                   <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Component id="btnRoll" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="32767" attributes="0"/>
+                  <Component id="btnRestart" min="-2" pref="150" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="80" max="-2" attributes="0"/>
               </Group>
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace min="-2" pref="66" max="-2" attributes="0"/>
@@ -82,7 +84,10 @@
                       </Group>
                       <Group type="102" alignment="0" attributes="0">
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                          <Component id="btnRoll" min="-2" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="btnRoll" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="btnRestart" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
                       </Group>
                   </Group>
                   <EmptySpace min="-2" pref="53" max="-2" attributes="0"/>
@@ -132,6 +137,11 @@
         <Component class="javax.swing.JLabel" name="lbl_game">
           <Properties>
             <Property name="text" type="java.lang.String" value="jLabel2"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JButton" name="btnRestart">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Yeniden Ba&#x15f;lat"/>
           </Properties>
         </Component>
       </SubComponents>

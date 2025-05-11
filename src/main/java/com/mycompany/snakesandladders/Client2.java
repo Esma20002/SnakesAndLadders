@@ -1,6 +1,5 @@
 package com.mycompany.snakesandladders;
 
-
 //import .*;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,12 +11,12 @@ import java.net.Socket;
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
  */
-
 /**
  *
  * @author nesma
  */
 public class Client2 {
+
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
