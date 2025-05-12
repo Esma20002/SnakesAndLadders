@@ -77,4 +77,10 @@ public class GameManager {
     public boolean hasPlayerWon(int playerId) {
         return positions[playerId] == 100;
     }
+
+    public void resetGame() {
+        positions[0] = 0;
+        positions[1] = 0;
+    }
+
 }

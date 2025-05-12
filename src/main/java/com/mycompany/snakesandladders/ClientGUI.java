@@ -2,6 +2,7 @@ package com.mycompany.snakesandladders;
 
 //import .*;
 import java.awt.Color;
+import java.awt.Image;
 import java.awt.Point;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +10,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -21,7 +24,8 @@ import javax.swing.JLabel;
  * @author nesma
  */
 public class ClientGUI extends javax.swing.JFrame {
-      private Socket socket;
+
+    private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
     private JLabel[] players = new JLabel[2];
@@ -30,8 +34,16 @@ public class ClientGUI extends javax.swing.JFrame {
 
     public ClientGUI() {
         initComponents();
+
         btnRoll.addActionListener(e -> sendRollCommand());
         connectToServer();
+
+        btnRestartt.addActionListener(e -> {
+            System.out.println("Butona basıldı!");
+            out.println("restart_request");
+            btnRestartt.setEnabled(false); // tekrar tıklanmasın, onay bekleniyor zaten
+        });
+
         startListeningFromServer();
         btnRoll.setEnabled(false);
 
@@ -70,16 +82,25 @@ public class ClientGUI extends javax.swing.JFrame {
                 String serverMessage;
                 while ((serverMessage = in.readLine()) != null) {
                     txtMessages.append("Sunucu: " + serverMessage + "\n");
-                    
-                    //RESTART
-//                    if (serverMessage.equals("RESTART")) {
-//        for (JLabel player : players) {
-//            player.setLocation(-100, -100);
-//        }
-//        lbl_game.repaint();
-//        txtMessages.append("Oyun yeniden başlatıldı.\n");
-//        continue;
-//    }
+
+                    if (serverMessage.equals("RESTART_ONAY_ISTEGI")) {
+                        int choice = JOptionPane.showConfirmDialog(this,
+                                "Diğer oyuncu oyunu yeniden başlatmak istiyor. Onaylıyor musunuz?",
+                                "Yeniden Başlatma İsteği",
+                                JOptionPane.YES_NO_OPTION);
+
+                        if (choice == JOptionPane.YES_OPTION) {
+                            out.println("restart_request");
+                        } else {
+                            txtMessages.append("Yeniden başlatma isteği reddedildi.\n");
+                        }
+                    }
+                    if (serverMessage.equals("OYUN_YENIDEN_BASLADI")) {
+                        txtMessages.append("🔄 Oyun yeniden başlatıldı!\n");
+                        players[0].setLocation(-100, -100);
+                        players[1].setLocation(-100, -100);
+                        btnRestartt.setEnabled(true);
+                    }
 
                     if (serverMessage.startsWith("PLAYER_ID:")) {
                         myPlayerId = Integer.parseInt(serverMessage.split(":")[1]);
@@ -87,6 +108,7 @@ public class ClientGUI extends javax.swing.JFrame {
 
                         // Sabit renkler
                         players[0] = new JLabel(new ImageIcon(getClass().getResource("/images/turuncu.png")));
+                        
                         players[1] = new JLabel(new ImageIcon(getClass().getResource("/images/siyah.png")));
 
                         for (JLabel player : players) {
@@ -96,13 +118,7 @@ public class ClientGUI extends javax.swing.JFrame {
                         }
                         lbl_game.repaint();
                     }
-                    
-                     // 🟠 RESTART_BUTTON_ENABLE kontrolü buraya eklenmeli:
-//    if (serverMessage.equals("RESTART_BUTTON_ENABLE")) {
-//        btnRestart.setEnabled(true);
-//    }
-                    
-                    
+
                     if (serverMessage.equals("Sıra sende!")) {
                         btnRoll.setEnabled(true);
                     } else if (serverMessage.equals("Bekle...")) {
@@ -117,7 +133,12 @@ public class ClientGUI extends javax.swing.JFrame {
                         if (pos == 0) {
                             players[playerId].setLocation(-100, -100);
                         } else {
-                            players[playerId].setLocation(boardPositions[pos]);
+                            // players[playerId].setLocation(boardPositions[pos]);
+                            Point basePos = boardPositions[pos];
+                            int offsetX = (playerId == 1) ? 10 : 0;  // sadece oyuncu 1 sağa kayar
+                            int offsetY = (playerId == 1) ? 10 : 0;  // istersen aşağı da kaydır
+
+                            players[playerId].setLocation(basePos.x + offsetX, basePos.y + offsetY);
                         }
                     }
                 }
@@ -305,7 +326,7 @@ public class ClientGUI extends javax.swing.JFrame {
         txtMessages = new javax.swing.JTextArea();
         btnRoll = new javax.swing.JButton();
         lbl_game = new javax.swing.JLabel();
-        btnRestart = new javax.swing.JButton();
+        btnRestartt = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -332,7 +353,7 @@ public class ClientGUI extends javax.swing.JFrame {
 
         lbl_game.setText("jLabel2");
 
-        btnRestart.setText("Yeniden Başlat");
+        btnRestartt.setText("Yeniden Başlat");
 
         javax.swing.GroupLayout panel1Layout = new javax.swing.GroupLayout(panel1);
         panel1.setLayout(panel1Layout);
@@ -344,7 +365,7 @@ public class ClientGUI extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addComponent(btnRoll)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnRestart, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnRestartt, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(80, 80, 80))
             .addGroup(panel1Layout.createSequentialGroup()
                 .addGap(66, 66, 66)
@@ -378,7 +399,7 @@ public class ClientGUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnRoll)
-                            .addComponent(btnRestart))))
+                            .addComponent(btnRestartt))))
                 .addGap(53, 53, 53))
         );
 
@@ -442,7 +463,7 @@ public class ClientGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnRestart;
+    private javax.swing.JButton btnRestartt;
     private javax.swing.JButton btnRoll;
     private javax.swing.JButton btnSend;
     private javax.swing.JLabel jLabel1;

@@ -28,11 +28,12 @@ public class Server2 {
     private int currentPlayer = 0; // sıra 0. oyuncudan başlasın
     private List<BufferedReader> readers = new ArrayList<>();
     private GameManager gameManager = new GameManager();//
+    private boolean[] restartVotes = new boolean[2];
 
     private void handleClient(Socket client, PrintWriter out, int playerId) {
         try (
                  BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));) {
-              out.println("PLAYER_ID:" + playerId);
+            out.println("PLAYER_ID:" + playerId);
 
             String name = in.readLine(); // oyuncu adı geldiğinde ekle
             synchronized (playerNames) {
@@ -62,18 +63,27 @@ public class Server2 {
                 if (message == null) {
                     break;
                 }
-               //RESTART 
-//                 if (message.equals("restart")) {
-//        synchronized (gameManager) {
-//            gameManager = new GameManager(); // Yeni oyun başlat
-//        }
-//        broadcast("RESTART");
-//        currentPlayer = 0;
-//        sendTo(0, "Sıra sende!");
-//        sendTo(1, "Bekle...");
-//        continue;
-//    }
-                 
+
+                System.out.println("Gelen mesaj: " + message);
+
+                if (message.equals("restart_request")) {
+                    restartVotes[playerId] = true;
+                    broadcast("OYUNCU " + playerNames.get(playerId) + " yeniden başlatmak istiyor.");
+
+                    if (restartVotes[0] && restartVotes[1]) {
+                        gameManager.resetGame(); // Bunu GameManager sınıfına ekleyeceğiz
+                        broadcast("OYUN_YENIDEN_BASLADI");
+                        broadcast("PLAYER_MOVE:0:0");
+                        broadcast("PLAYER_MOVE:1:0");
+                        currentPlayer = 0;
+                        sendTo(0, "Sıra sende!");
+                        sendTo(1, "Bekle...");
+                        restartVotes[0] = restartVotes[1] = false;
+                    } else {
+                        int other = (playerId + 1) % 2;
+                        sendTo(other, "RESTART_ONAY_ISTEGI");
+                    }
+                }
 
                 // Eğer oyun başlamamışsa roll mesajını kabul etme
                 if (playerNames.size() < 2) {
@@ -88,11 +98,16 @@ public class Server2 {
                     broadcast(playerNames.get(playerId) + " zar attı: " + dice + ", yeni pozisyon: " + newPos);
                     broadcast("PLAYER_MOVE:" + playerId + ":" + newPos);
 
-                    
                     // Kazanma kontrolü
                     if (gameManager.hasPlayerWon(playerId)) {
                         broadcast("🏆 " + playerNames.get(playerId) + " oyunu kazandı!");
-                        return;
+                        // Oyun bitti ama istemci bağlantısı açık kalsın
+                        // Kullanıcılar restart talebi gönderebilir
+                        continue; // döngüde kal, sadece yeni "roll" komutlarını işlemez
+                    }
+
+                    if (!message.equals("restart_request") && playerNames.size() == 2 && playerId != currentPlayer) {
+                        continue; // sadece restart_request'e izin ver, diğer komutları yoksay
                     }
 
                     currentPlayer = (currentPlayer + 1) % 2;
