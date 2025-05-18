@@ -1,4 +1,4 @@
-package com.mycompany.snakesandladders;
+package snakesAndLadders;
 
 //import .*;
 import java.io.BufferedReader;
@@ -15,7 +15,7 @@ import java.net.Socket;
  *
  * @author nesma
  */
-public class Client2 {
+public class Client {
 
     private Socket socket;
     private PrintWriter out;

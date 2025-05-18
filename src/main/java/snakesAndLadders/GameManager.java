@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
  */
-package com.mycompany.snakesandladders;
+package snakesAndLadders;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +15,6 @@ import java.util.Random;
 public class GameManager {
 
     private int[] positions = new int[]{0, 0}; // Oyuncular tahtanın dışında başlar
-    //private int[] positions = new int[2]; // Oyuncu 0 ve 1'in pozisyonları (1–100)
     private final Map<Integer, Integer> snakes = new HashMap<>();
     private final Map<Integer, Integer> ladders = new HashMap<>();
     private final Random random = new Random();

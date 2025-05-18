@@ -1,4 +1,8 @@
-com\mycompany\snakesandladders\Server.class
-com\mycompany\snakesandladders\Client.class
-com\mycompany\snakesandladders\SnakesAndLadders.class
-com\mycompany\snakesandladders\Server$ClientHandler.class
+snakesAndLadders\GameManager.class
+snakesAndLadders\AppMain.class
+snakesAndLadders\Client.class
+snakesAndLadders\ClientGUI$3.class
+snakesAndLadders\ClientGUI.class
+snakesAndLadders\Server.class
+snakesAndLadders\ClientGUI$2.class
+snakesAndLadders\ClientGUI$1.class

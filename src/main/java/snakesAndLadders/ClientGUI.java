@@ -1,4 +1,4 @@
-package com.mycompany.snakesandladders;
+package snakesAndLadders;
 
 //import .*;
 import java.awt.Color;
@@ -13,6 +13,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -34,14 +35,16 @@ public class ClientGUI extends javax.swing.JFrame {
 
     public ClientGUI() {
         initComponents();
+        setResizable(false);  // Pencerenin boyutu değiştirilemesin
 
         btnRoll.addActionListener(e -> sendRollCommand());
         connectToServer();
+        
 
         btnRestartt.addActionListener(e -> {
             System.out.println("Butona basıldı!");
             out.println("restart_request");
-            btnRestartt.setEnabled(false); // tekrar tıklanmasın, onay bekleniyor zaten
+            btnRestartt.setEnabled(true); // tekrar tıklanmasın, onay bekleniyor zaten
         });
 
         startListeningFromServer();
@@ -81,7 +84,24 @@ public class ClientGUI extends javax.swing.JFrame {
             try {
                 String serverMessage;
                 while ((serverMessage = in.readLine()) != null) {
-                    txtMessages.append("Sunucu: " + serverMessage + "\n");
+//                    txtMessages.append("Sunucu: " + serverMessage + "\n");
+
+                    if (!serverMessage.startsWith("PLAYER_MOVE") && !serverMessage.startsWith("PLAYER_ID") && !serverMessage.startsWith("OYUN_YENIDEN_BASLADI") && !serverMessage.startsWith("RESTART_ONAY_ISTEGI") && !serverMessage.startsWith("DIGER_OYUNCU_CIKTI")) {
+                        txtMessages.append("Sunucu: " + serverMessage + "\n");
+                    }
+
+                    txtMessages.setCaretPosition(txtMessages.getDocument().getLength());
+
+                    if (serverMessage.equals("DIGER_OYUNCU_CIKTI")) {
+                        JOptionPane.showMessageDialog(this, "Diğer oyuncu oyundan ayrıldı. Oyun sona erdi.");
+                        btnRoll.setEnabled(false);
+                        btnRestartt.setEnabled(false);
+
+                        // Ekranı kapat
+                        dispose(); // pencereyi kapat
+                        System.exit(0); // programı tamamen sonlandır
+                        break;
+                    }
 
                     if (serverMessage.equals("RESTART_ONAY_ISTEGI")) {
                         int choice = JOptionPane.showConfirmDialog(this,
@@ -93,7 +113,14 @@ public class ClientGUI extends javax.swing.JFrame {
                             out.println("restart_request");
                         } else {
                             txtMessages.append("Yeniden başlatma isteği reddedildi.\n");
+                            out.println("restart_rejected"); // 🟠 RED cevabını sunucuya bildir
+
+                            // ❗ Karşı taraf red verdiği için, isteği gönderen oyuncunun butonu tekrar aktif edilmeli
+                            btnRestartt.setEnabled(true);  // tekrar yeniden başlatmak isteyebilsin
                         }
+//                        } else {
+//                            txtMessages.append("Yeniden başlatma isteği reddedildi.\n");
+//                        }
                     }
                     if (serverMessage.equals("OYUN_YENIDEN_BASLADI")) {
                         txtMessages.append("🔄 Oyun yeniden başlatıldı!\n");
@@ -108,7 +135,7 @@ public class ClientGUI extends javax.swing.JFrame {
 
                         // Sabit renkler
                         players[0] = new JLabel(new ImageIcon(getClass().getResource("/images/turuncu.png")));
-                        
+
                         players[1] = new JLabel(new ImageIcon(getClass().getResource("/images/siyah.png")));
 
                         for (JLabel player : players) {
@@ -141,6 +168,15 @@ public class ClientGUI extends javax.swing.JFrame {
                             players[playerId].setLocation(basePos.x + offsetX, basePos.y + offsetY);
                         }
                     }
+                    if (serverMessage.contains("🏆")) {
+                        JOptionPane.showMessageDialog(this,
+                                serverMessage,
+                                "Oyun Bitti", JOptionPane.INFORMATION_MESSAGE);
+
+                        btnRoll.setEnabled(false);
+                        btnRestartt.setEnabled(true); // İsteğe bağlı: yeniden başlatmaya izin ver
+                    }
+
                 }
             } catch (IOException e) {
                 txtMessages.append("Bağlantı koptu: " + e.getMessage() + "\n");
@@ -151,7 +187,7 @@ public class ClientGUI extends javax.swing.JFrame {
 
     private void connectToServer() {
         try {
-            socket = new Socket("localhost", 2000);
+            socket = new Socket("localhost", 2000);//16.171.148.64(localhost)
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {
@@ -360,26 +396,26 @@ public class ClientGUI extends javax.swing.JFrame {
         panel1Layout.setHorizontalGroup(
             panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(panel1Layout.createSequentialGroup()
-                .addGap(53, 53, 53)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(btnRoll)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnRestartt, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(80, 80, 80))
-            .addGroup(panel1Layout.createSequentialGroup()
                 .addGap(66, 66, 66)
                 .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(panel1Layout.createSequentialGroup()
-                        .addComponent(lbl_game, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(37, Short.MAX_VALUE))
+                        .addComponent(jScrollPane1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnRoll)
+                        .addGap(248, 248, 248))
                     .addGroup(panel1Layout.createSequentialGroup()
-                        .addComponent(jLabel1)
-                        .addGap(46, 46, 46)
-                        .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 165, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnSend)
-                        .addGap(50, 50, 50))))
+                        .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(panel1Layout.createSequentialGroup()
+                                .addComponent(jLabel1)
+                                .addGap(46, 46, 46)
+                                .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 165, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(26, 26, 26)
+                                .addComponent(btnSend)
+                                .addGap(26, 26, 26)
+                                .addComponent(btnRestartt, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(45, 45, 45))
+                            .addComponent(lbl_game, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addContainerGap(56, Short.MAX_VALUE))))
         );
         panel1Layout.setVerticalGroup(
             panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -388,19 +424,15 @@ public class ClientGUI extends javax.swing.JFrame {
                 .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel1)
-                    .addComponent(btnSend))
+                    .addComponent(btnSend)
+                    .addComponent(btnRestartt))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(lbl_game, javax.swing.GroupLayout.DEFAULT_SIZE, 517, Short.MAX_VALUE)
+                .addComponent(lbl_game, javax.swing.GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(panel1Layout.createSequentialGroup()
-                        .addGap(7, 7, 7)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(panel1Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(btnRoll)
-                            .addComponent(btnRestartt))))
-                .addGap(53, 53, 53))
+                    .addComponent(btnRoll)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(54, 54, 54))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -411,7 +443,9 @@ public class ClientGUI extends javax.swing.JFrame {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(panel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(panel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         pack();
