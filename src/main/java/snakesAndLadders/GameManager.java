@@ -9,19 +9,22 @@ import java.util.Map;
 import java.util.Random;
 
 /**
+ * GameManager sınıfı, Snakes and Ladders oyununun çekirdek mantığını yönetir.
+ * Oyuncuların pozisyonları, yılan ve merdiven kuralları, zar atma işlemleri burada kontrol edilir.
  *
  * @author nesma
  */
 public class GameManager {
 
-    private int[] positions = new int[]{0, 0}; // Oyuncular tahtanın dışında başlar
-    private final Map<Integer, Integer> snakes = new HashMap<>();
-    private final Map<Integer, Integer> ladders = new HashMap<>();
-    private final Random random = new Random();
-
+    private int[] positions = new int[]{0, 0};  // Her iki oyuncunun tahtadaki pozisyonları (0: henüz tahtada değil)
+    private final Map<Integer, Integer> snakes = new HashMap<>();  // Yılanların başlangıç ve bitiş noktalarını tutar (başlangıç → düşeceği yer)
+    private final Map<Integer, Integer> ladders = new HashMap<>();  // Merdivenlerin başlangıç ve bitiş noktalarını tutar (başlangıç → çıkacağı yer)
+    private final Random random = new Random(); // Zar atmak için rastgele sayı üreteci
+    
+    // Yapıcı metod: Oyunun başında yılan ve merdiven konumlarını belirler
     public GameManager() {
 
-        // Örnek yılanlar
+        // Yılanlar
         snakes.put(29, 9);
         snakes.put(38, 15);
         snakes.put(47, 5);
@@ -31,7 +34,7 @@ public class GameManager {
         snakes.put(92, 70);
         snakes.put(97, 25);
 
-        // Örnek merdivenler
+        // Merdivenler
         ladders.put(2, 23);
         ladders.put(8, 34);
         ladders.put(20, 77);
@@ -42,12 +45,12 @@ public class GameManager {
         ladders.put(82, 100);
     }
 
-    // Zar at ve yeni pozisyonu hesapla
+    // Zar atma işlemi (1 ile 6 arasında rastgele sayı üretir)
     public int rollDice() {
         return random.nextInt(6) + 1;
     }
 
-    // Oyuncunun pozisyonunu güncelle
+    // Oyuncunun pozisyonunu zar sonucuna göre güncelle
     public int movePlayer(int playerId, int dice) {
         int newPos = positions[playerId] + dice;
 
@@ -65,18 +68,22 @@ public class GameManager {
             newPos = ladders.get(newPos);
         }
 
+        // Pozisyonu güncelle
         positions[playerId] = newPos;
         return newPos;
     }
-
+    
+    // Belirli bir oyuncunun mevcut pozisyonunu döner
     public int getPlayerPosition(int playerId) {
-        return positions[playerId];
+        return positions[playerId];  // Oyuncunun tahtadaki pozisyonu
     }
-
+    
+    // Oyuncunun kazanıp kazanmadığını kontrol eder
     public boolean hasPlayerWon(int playerId) {
-        return positions[playerId] == 100;
+        return positions[playerId] == 100; // true → oyuncu kazandı, false → henüz kazanmadı
     }
-
+    
+    // Oyunu sıfırlar; her iki oyuncunun pozisyonu başa döner
     public void resetGame() {
         positions[0] = 0;
         positions[1] = 0;

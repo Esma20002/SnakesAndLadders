@@ -21,45 +21,57 @@ import javax.swing.SwingUtilities;
  */
 /**
  * AA
+ * ClientGUI sınıfı, oyuncunun arayüzle etkileşimini sağlayan Swing tabanlı kullanıcı arayüzüdür.
+ * Oyuncu adını girer, zar atar, sunucudan gelen mesajlara göre tahtadaki hareketleri ve oyun durumunu görselleştirir.
  *
  * @author nesma
  */
 public class ClientGUI extends javax.swing.JFrame {
-
+    
+    // Ağ bağlantısı için gerekli nesneler
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
-    private JLabel[] players = new JLabel[2];
-    private Point[] boardPositions = new Point[101];
-    private int myPlayerId = -1;
-    private String lastMessage = "";
+    
+    private JLabel[] players = new JLabel[2];  // Oyuncu taşlarını temsil eden label dizisi
+    private Point[] boardPositions = new Point[101]; // Oyun tahtasındaki 101 pozisyonun (1–100 + dışarı) koordinatları
+    private int myPlayerId = -1; // Bu istemcinin oyuncu numarası (0 veya 1)
+    private String lastMessage = ""; // Aynı mesajın tekrar yazılmasını önlemek için
 
     public ClientGUI() {
         initComponents();
         setResizable(false);  // Pencerenin boyutu değiştirilemesin
-        this.setTitle("Snakes and Ladders");  // 🎯 pencere başlığı ayarlanır
+        this.setTitle("Snakes and Ladders");  // Pencere başlığı ayarlanır
 
+        // Zar atma butonuna tıklanınca yapılacaklar
         btnRoll.addActionListener(e -> sendRollCommand());
+        
+        // Sunucuya bağlan
         connectToServer();
-
+        
+        // Yeniden başlatma isteği gönder
         btnRestartt.addActionListener(e -> {
             System.out.println("Butona basıldı!");
             out.println("restart_request");
-            btnRestartt.setEnabled(true); // tekrar tıklanmasın, onay bekleniyor zaten
+            btnRestartt.setEnabled(true);
         });
 
-        //startListeningFromServer();
+        
         btnRoll.setEnabled(false);
-        btnRestartt.setEnabled(false);  // 🔒 Başta pasif
-
+        btnRestartt.setEnabled(false);  // Başta pasif
+        
+        // Arka plan görselini ayarla
         ImageIcon boardImage = new ImageIcon(getClass().getResource("/images/board.png"));
         lbl_game.setIcon(boardImage);
         lbl_game.setSize(boardImage.getIconWidth(), boardImage.getIconHeight());
         lbl_game.setLayout(null);
-
+        
+        // Tahta üzerindeki koordinatları hazırla
         initializeBoardPositions();
     }
-
+    
+    // Oyun tahtasındaki kutuların koordinatlarını hesaplar
+    // Her kutuya bir Point (x, y) atanır
     private void initializeBoardPositions() {
         int cellSize = lbl_game.getWidth() / 10;
         int startY = lbl_game.getHeight() - cellSize;
@@ -75,18 +87,21 @@ public class ClientGUI extends javax.swing.JFrame {
             leftToRight = !leftToRight;
         }
     }
-
+    
+    // Zar at komutu sunucuya gönderilir
     private void sendRollCommand() {
         out.println("roll");
         btnRoll.setEnabled(false);
     }
-
+    
+    // Sunucudan gelen mesajları dinleyen arka plan thread'i
     private void startListeningFromServer() {
         Thread listener = new Thread(() -> {
             try {
                 String serverMessage;
                 while ((serverMessage = in.readLine()) != null) {
-
+                    
+                    // Belirli mesajları sadece bir kez göster
                     if (!serverMessage.startsWith("PLAYER_MOVE") && !serverMessage.startsWith("PLAYER_ID") && !serverMessage.startsWith("OYUN_YENIDEN_BASLADI") && !serverMessage.startsWith("RESTART_ONAY_ISTEGI") && !serverMessage.startsWith("DIGER_OYUNCU_CIKTI")) {
                       
                         if (!serverMessage.equals(lastMessage)) {
@@ -94,9 +109,10 @@ public class ClientGUI extends javax.swing.JFrame {
                             lastMessage = serverMessage;
                         }
                     }
+                    
+                    // Oyun başladıysa yeniden başlat butonu aktif olsun
                     if (serverMessage.startsWith("Oyun başladı!")) {
-                        //txtMessages.append("Sunucu: " + serverMessage + "\n");
-                        btnRestartt.setEnabled(true); // ✅ Oyun başladıysa buton aktif
+                        btnRestartt.setEnabled(true); //  Oyun başladıysa buton aktif
                     }
 
                     txtMessages.setCaretPosition(txtMessages.getDocument().getLength());
@@ -124,7 +140,7 @@ public class ClientGUI extends javax.swing.JFrame {
                             txtMessages.append("Yeniden başlatma isteği reddedildi.\n");
                             out.println("restart_rejected"); // 🟠 RED cevabını sunucuya bildir
 
-                            // ❗ Karşı taraf red verdiği için, isteği gönderen oyuncunun butonu tekrar aktif edilmeli
+                            // Karşı taraf red verdiği için, isteği gönderen oyuncunun butonu tekrar aktif edilmeli
                             btnRestartt.setEnabled(true);  // tekrar yeniden başlatmak isteyebilsin
                         }
                     }
@@ -134,23 +150,25 @@ public class ClientGUI extends javax.swing.JFrame {
                         players[1].setLocation(-100, -100);
                         btnRestartt.setEnabled(true);
                     }
-
+                    
+                    // Sunucudan gelen mesaj oyuncu kimliğini belirtiyorsa:
                     if (serverMessage.startsWith("PLAYER_ID:")) {
+                        // Bu istemcinin ID’sini al (0 ya da 1)
                         myPlayerId = Integer.parseInt(serverMessage.split(":")[1]);
 
-                        int otherPlayerId = (myPlayerId + 1) % 2;
+                        //int otherPlayerId = (myPlayerId + 1) % 2;
 
-                        // Sabit renkler
+                        // // Oyuncu taşlarını simgeleyen JLabel nesnelerini oluştur
                         players[0] = new JLabel(new ImageIcon(getClass().getResource("/images/turuncu.png")));
-
                         players[1] = new JLabel(new ImageIcon(getClass().getResource("/images/siyah.png")));
-
+                        
+                        // Her iki oyuncunun taşını tahtaya ekle
                         for (JLabel player : players) {
                             player.setSize(20, 20);
                             player.setLocation(-100, -100);
-                            lbl_game.add(player);
+                            lbl_game.add(player);    // Tahtaya (panel üzerine) eklenir
                         }
-                        lbl_game.repaint();
+                        lbl_game.repaint(); // Yeniden çizdir
                     }
 
                     if (serverMessage.equals("Sıra sende!")) {
@@ -158,26 +176,30 @@ public class ClientGUI extends javax.swing.JFrame {
                     } else if (serverMessage.equals("Bekle...")) {
                         btnRoll.setEnabled(false);
                     }
-
+                    
+                    // Eğer sunucu taş hareketi mesajı gönderdiyse:
                     if (serverMessage.startsWith("PLAYER_MOVE:")) {
                         String[] parts = serverMessage.split(":");
-                        int playerId = Integer.parseInt(parts[1]);
-                        int pos = Integer.parseInt(parts[2]);
-
+                        int playerId = Integer.parseInt(parts[1]); // Hangi oyuncu
+                        int pos = Integer.parseInt(parts[2]); // Yeni pozisyon
+                        
+                        // Eğer pozisyon sıfırsa, taş görünmesin (başlangıçta)
                         if (pos == 0) {
                             players[playerId].setLocation(-100, -100);
                         } else {
-                            // players[playerId].setLocation(boardPositions[pos]);
-                            Point basePos = boardPositions[pos];
-                            int offsetX = (playerId == 1) ? 10 : 0;  // sadece oyuncu 1 sağa kayar
-                            int offsetY = (playerId == 1) ? 10 : 0;  // istersen aşağı da kaydır
-
-                            players[playerId].setLocation(basePos.x + offsetX, basePos.y + offsetY);
+                            Point basePos = boardPositions[pos];     // Koordinatlar hesaplanır
+                            
+                            // Eğer oyuncu 1 ise taş biraz sağa ve aşağıya kaydırılır (çakışmaması için)
+                            int offsetX = (playerId == 1) ? 10 : 0; 
+                            int offsetY = (playerId == 1) ? 10 : 0;  
+                     
+                            players[playerId].setLocation(basePos.x + offsetX, basePos.y + offsetY); // Taş tahtada ilgili koordinata yerleştirilir
                         }
                     }
+                    // Eğer mesaj kupa içeriyorsa → kazanan belli olmuştur
                     if (serverMessage.contains("🏆")) {
                         JOptionPane.showMessageDialog(this,
-                                serverMessage,
+                                serverMessage, 
                                 "Oyun Bitti", JOptionPane.INFORMATION_MESSAGE);
 
                         btnRoll.setEnabled(false);
@@ -194,11 +216,14 @@ public class ClientGUI extends javax.swing.JFrame {
 
     private void connectToServer() {
         try {
-            socket = new Socket("localhost", 2000);//16.171.148.64(localhost)
+            // Sunucuya bağlan
+            socket = new Socket("13.53.199.56", 2000);//13.53.199.56
+            
+            // Giriş ve çıkışlar için
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // 📌 Bağlantı sağlanır sağlanmaz dinlemeyi başlat!
+            // Sunucudan mesajları dinlemeye başla
             startListeningFromServer();
 
         } catch (IOException e) {
@@ -210,7 +235,7 @@ public class ClientGUI extends javax.swing.JFrame {
     private void sendNameToServer() {
         String name = txtName.getText().trim();
         if (!name.isEmpty()) {
-            out.println(name);
+            out.println(name); // Sunucuya oyuncu adı gönderilir
         }
     }
 
@@ -321,8 +346,8 @@ public class ClientGUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendActionPerformed
-        sendNameToServer();
-        btnSend.setEnabled(false); // sadece bir kez göndersin
+        sendNameToServer();          // Adı sunucuya gönder
+        btnSend.setEnabled(false); // Sadece bir kez göndersin
         txtName.setEditable(false);
 
     }//GEN-LAST:event_btnSendActionPerformed
