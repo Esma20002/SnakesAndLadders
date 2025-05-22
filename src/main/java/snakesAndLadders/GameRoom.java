@@ -25,10 +25,14 @@ public class GameRoom {
     private GameManager gameManager = new GameManager();
     private boolean[] restartVotes = new boolean[2];
     private int currentPlayer = 0;
+    private int requestedRestartPlayer = -1;
 
-    public GameRoom(Socket client1, Socket client2) {
+
+    public GameRoom(Socket client1, String name1, Socket client2, String name2) {
         clients[0] = client1;
         clients[1] = client2;
+        playerNames[0] = name1;
+        playerNames[1] = name2;
     }
 
     public void startGame() {
@@ -44,24 +48,16 @@ public class GameRoom {
             writers[playerId] = new PrintWriter(clients[playerId].getOutputStream(), true);
 
             writers[playerId].println("PLAYER_ID:" + playerId);
-            String name = readers[playerId].readLine();
-            playerNames[playerId] = name;
 
-            writers[playerId].println("Hoş geldinn, " + name + "!");
             if (playerNames[0] != null && playerNames[1] != null) {
-                
+
                 broadcast("Oyun başladı! " + playerNames[0] + " vs " + playerNames[1]);
                 sendTo(0, "Sıra sende!");
                 sendTo(1, "Bekle...");
             }
-            
-            
- 
-
 
             while (true) {
                 String message = readers[playerId].readLine();
-                //String message = in.readLine();
 
                 if (message == null) {
                     System.out.println(">> Oyuncu çıkışı algılandı ve diğerine haber verildi.");
@@ -107,8 +103,6 @@ public class GameRoom {
                     broadcast(playerNames[playerId] + " zar attı: " + dice + ", yeni pozisyon: " + newPos);
                     broadcast("PLAYER_MOVE:" + playerId + ":" + newPos);
                     System.out.println("PLAYER_MOVE:" + playerId + ":" + newPos);
-                    
-                    
 
                     if (gameManager.hasPlayerWon(playerId)) {
                         broadcast("🏆 " + playerNames[playerId] + " oyunu kazandı!");
@@ -123,6 +117,11 @@ public class GameRoom {
                 if (message.equals("restart_request")) {
                     restartVotes[playerId] = true;
 
+                    // 🔥 İlk isteyen oyuncuyu kaydet
+                    if (requestedRestartPlayer == -1) {
+                        requestedRestartPlayer = playerId;
+                    }
+
                     int other = (playerId + 1) % 2;
 
                     if (restartVotes[0] && restartVotes[1]) {
@@ -133,13 +132,17 @@ public class GameRoom {
                         System.out.println("OYUN_YENIDEN_BASLADI");
                         System.out.println("PLAYER_MOVE:0:0");
                         System.out.println("PLAYER_MOVE:1:0");
-                        
-                        
-                        
-                        currentPlayer = 0;
-                        sendTo(0, "Sıra sende!");
-                        sendTo(1, "Bekle...");
+
+                        // 🎯 Oyun, yeniden başlatmayı isteyen oyuncudan başlasın
+                        currentPlayer = requestedRestartPlayer;
+
+                        sendTo(currentPlayer, "Sıra sende!");
+                        sendTo((currentPlayer + 1) % 2, "Bekle...");
+
+                        // sıfırla
                         restartVotes[0] = restartVotes[1] = false;
+                        requestedRestartPlayer = -1;
+
                     } else {
                         sendTo(other, "RESTART_ONAY_ISTEGI");
                     }
@@ -147,33 +150,36 @@ public class GameRoom {
 
                 if (message.equals("restart_rejected")) {
                     restartVotes[0] = restartVotes[1] = false; // red geldiyse sıfırla
+                    requestedRestartPlayer = -1; // ❗ red geldi, sıfırla
                     broadcast("Yeniden başlatma isteği reddedildi.");
-                    
+
                 }
 
             }
-          } catch (IOException e) {
-    System.out.println("Bir oyuncunun bağlantısı kesildi: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Bir oyuncunun bağlantısı kesildi: " + e.getMessage());
 
-    int other = (playerId + 1) % 2;
-    if (writers[other] != null) {
-        try {
-            writers[other].println("DIGER_OYUNCU_CIKTI");
-            System.out.println(">> Oyuncu çıkışı algılandı ve diğerine haber verildi.");
-        } catch (Exception ex) {
-            System.out.println(">> Diğer oyuncuya mesaj iletilemedi: " + ex.getMessage());
+            int other = (playerId + 1) % 2;
+            if (writers[other] != null) {
+                try {
+                    writers[other].println("DIGER_OYUNCU_CIKTI");
+                    System.out.println(">> Oyuncu çıkışı algılandı ve diğerine haber verildi.");
+                } catch (Exception ex) {
+                    System.out.println(">> Diğer oyuncuya mesaj iletilemedi: " + ex.getMessage());
+                }
+            }
+
+            // Bağlantıları güvenli şekilde kapat
+            try {
+                clients[playerId].close();
+            } catch (Exception ignore) {
+            }
+            try {
+                clients[other].close();
+            } catch (Exception ignore) {
+            }
         }
-    }
 
-    // Bağlantıları güvenli şekilde kapat
-    try { clients[playerId].close(); } catch (Exception ignore) {}
-    try { clients[other].close(); } catch (Exception ignore) {}
-}
-
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//
-//        }
     }
 
     private void broadcast(String msg) {
@@ -181,20 +187,6 @@ public class GameRoom {
             writer.println(msg);
         }
     }
-    
-//    private void broadcast(String msg) {
-//    // Eğer mesaj teknikse (ham veri gibi), sadece logla
-//    if (msg.startsWith("PLAYER_MOVE") || msg.startsWith("PLAYER_ID")) {
-//        System.out.println("Sunucu logu (gizli mesaj): " + msg);
-//        return;
-//    }
-//
-//    // Aksi halde tüm oyunculara gönder
-//    for (PrintWriter writer : writers) {
-//        writer.println(msg);
-//    }
-//}
-
 
     private void sendTo(int id, String msg) {
         writers[id].println(msg);

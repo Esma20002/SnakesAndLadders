@@ -32,14 +32,15 @@ public class ClientGUI extends javax.swing.JFrame {
     private JLabel[] players = new JLabel[2];
     private Point[] boardPositions = new Point[101];
     private int myPlayerId = -1;
+    private String lastMessage = "";
 
     public ClientGUI() {
         initComponents();
         setResizable(false);  // Pencerenin boyutu değiştirilemesin
+        this.setTitle("Snakes and Ladders");  // 🎯 pencere başlığı ayarlanır
 
         btnRoll.addActionListener(e -> sendRollCommand());
         connectToServer();
-        
 
         btnRestartt.addActionListener(e -> {
             System.out.println("Butona basıldı!");
@@ -47,8 +48,9 @@ public class ClientGUI extends javax.swing.JFrame {
             btnRestartt.setEnabled(true); // tekrar tıklanmasın, onay bekleniyor zaten
         });
 
-        startListeningFromServer();
+        //startListeningFromServer();
         btnRoll.setEnabled(false);
+        btnRestartt.setEnabled(false);  // 🔒 Başta pasif
 
         ImageIcon boardImage = new ImageIcon(getClass().getResource("/images/board.png"));
         lbl_game.setIcon(boardImage);
@@ -84,10 +86,17 @@ public class ClientGUI extends javax.swing.JFrame {
             try {
                 String serverMessage;
                 while ((serverMessage = in.readLine()) != null) {
-//                    txtMessages.append("Sunucu: " + serverMessage + "\n");
 
                     if (!serverMessage.startsWith("PLAYER_MOVE") && !serverMessage.startsWith("PLAYER_ID") && !serverMessage.startsWith("OYUN_YENIDEN_BASLADI") && !serverMessage.startsWith("RESTART_ONAY_ISTEGI") && !serverMessage.startsWith("DIGER_OYUNCU_CIKTI")) {
-                        txtMessages.append("Sunucu: " + serverMessage + "\n");
+                      
+                        if (!serverMessage.equals(lastMessage)) {
+                            txtMessages.append("Sunucu: " + serverMessage + "\n");
+                            lastMessage = serverMessage;
+                        }
+                    }
+                    if (serverMessage.startsWith("Oyun başladı!")) {
+                        //txtMessages.append("Sunucu: " + serverMessage + "\n");
+                        btnRestartt.setEnabled(true); // ✅ Oyun başladıysa buton aktif
                     }
 
                     txtMessages.setCaretPosition(txtMessages.getDocument().getLength());
@@ -118,9 +127,6 @@ public class ClientGUI extends javax.swing.JFrame {
                             // ❗ Karşı taraf red verdiği için, isteği gönderen oyuncunun butonu tekrar aktif edilmeli
                             btnRestartt.setEnabled(true);  // tekrar yeniden başlatmak isteyebilsin
                         }
-//                        } else {
-//                            txtMessages.append("Yeniden başlatma isteği reddedildi.\n");
-//                        }
                     }
                     if (serverMessage.equals("OYUN_YENIDEN_BASLADI")) {
                         txtMessages.append("🔄 Oyun yeniden başlatıldı!\n");
@@ -131,6 +137,7 @@ public class ClientGUI extends javax.swing.JFrame {
 
                     if (serverMessage.startsWith("PLAYER_ID:")) {
                         myPlayerId = Integer.parseInt(serverMessage.split(":")[1]);
+
                         int otherPlayerId = (myPlayerId + 1) % 2;
 
                         // Sabit renkler
@@ -190,6 +197,10 @@ public class ClientGUI extends javax.swing.JFrame {
             socket = new Socket("localhost", 2000);//16.171.148.64(localhost)
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // 📌 Bağlantı sağlanır sağlanmaz dinlemeyi başlat!
+            startListeningFromServer();
+
         } catch (IOException e) {
             txtMessages.append("Sunucuya bağlanılamadı.\n");
             btnSend.setEnabled(false);
@@ -202,148 +213,6 @@ public class ClientGUI extends javax.swing.JFrame {
             out.println(name);
         }
     }
-//    private Socket socket;
-//    private PrintWriter out;
-//    private BufferedReader in;
-//    private JLabel player1;
-//    private JLabel player2;
-//    private Point[] boardPositions = new Point[101]; // 1-100 için koordinat
-//    private int myPlayerId = -1; // oyuncu kimliği (0 mı 1 mi?)
-//
-//    /**
-//     * Creates new form ClientGUI
-//     */
-//    public ClientGUI() {
-//        initComponents();
-//        btnRoll.addActionListener(new java.awt.event.ActionListener() {
-//            public void actionPerformed(java.awt.event.ActionEvent evt) {
-//                sendRollCommand();
-//            }
-//        });
-//
-//        connectToServer();
-//        startListeningFromServer();
-//        btnRoll.setEnabled(false);
-//        ImageIcon boardImage = new ImageIcon(getClass().getResource("/images/board.png"));
-//        lbl_game.setIcon(boardImage);
-//        lbl_game.setSize(boardImage.getIconWidth(), boardImage.getIconHeight());
-//        lbl_game.setLayout(null); // taşların yerleştirilebilmesi için serbest konum
-//
-//// Matris koordinatlarını oluştur
-//        initializeBoardPositions();
-//
-//// Piyonları oluştur
-//        player1 = new JLabel(new ImageIcon(getClass().getResource("/images/beyaz.png")));
-//        player1.setSize(20, 20);
-//        lbl_game.add(player1);
-//
-//        player2 = new JLabel(new ImageIcon(getClass().getResource("/images/siyah.png")));
-//        player2.setSize(20, 20);
-//        lbl_game.add(player2);
-//        player1.setLocation(-100, -100); // görünmeyen bir konum
-//        player2.setLocation(-100, -100);
-//
-//        int boardWidth = lbl_game.getWidth();  // örn: 600
-//        int boardHeight = lbl_game.getHeight(); // örn: 600
-//        int cellSize = boardWidth / 10; // 600px / 10 = 60px gibi
-//
-//    }
-//
-//    private void initializeBoardPositions() {
-//        boardPositions = new Point[101]; // 1–100
-//
-//        int cellSize = lbl_game.getWidth() / 10;
-//        int startY = lbl_game.getHeight() - cellSize; // alt satır
-//        int index = 1;
-//        boolean leftToRight = true;
-//
-//        for (int row = 0; row < 10; row++) {
-//            for (int col = 0; col < 10; col++) {
-//                int x = leftToRight ? col * cellSize : (9 - col) * cellSize;
-//                int y = startY - (row * cellSize);
-//                boardPositions[index++] = new Point(x + cellSize / 4, y + cellSize / 4); // taşı ortaya yerleştirmek için ufak offset
-//            }
-//            leftToRight = !leftToRight;
-//        }
-//    }
-//
-//    private void sendRollCommand() {
-//        out.println("roll"); // Zar atma isteğini sunucuya gönder
-//        btnRoll.setEnabled(false); // Kullanıcı tekrar basamasın
-//    }
-//
-//    // Sunucudan gelen mesajları dinleyecek thread
-//    private void startListeningFromServer() {
-//        Thread listener = new Thread(() -> {
-//            try {
-//                String serverMessage;
-//                while ((serverMessage = in.readLine()) != null) {
-//                    txtMessages.append("Sunucu: " + serverMessage + "\n");
-//
-//                    // 🔽 Oyuncu ID bilgisi varsa ayarla
-//                    if (serverMessage.contains("Oyuncu 1")) {
-//                        myPlayerId = 0;
-//                    } else if (serverMessage.contains("Oyuncu 2")) {
-//                        myPlayerId = 1;
-//                    }
-//
-//                    if (serverMessage.equals("Sıra sende!")) {
-//                        btnRoll.setEnabled(true);  // Sıra oyuncudaysa zar atabilir
-//                    } else if (serverMessage.equals("Bekle...")) {
-//                        btnRoll.setEnabled(false); // Sıra karşı oyuncudaysa buton kilitli
-//                    }
-//
-//                    if (serverMessage.contains("yeni pozisyon:")) {
-//                        // Örnek: "Ali zar attı: 4, yeni pozisyon: 25"
-//                        try {
-//                            String[] parts = serverMessage.split("yeni pozisyon:");
-//                            int position = Integer.parseInt(parts[1].trim());
-//
-//                            if (serverMessage.contains(txtName.getText())) {
-////if (serverMessage.contains("Oyuncu " + (myPlayerId + 1))) {
-//                                if (position == 0) {
-//                                    player1.setLocation(-100, -100); // görünmesin
-//                                } else {
-//                                    player1.setLocation(boardPositions[position]);
-//                                }
-//                            } else {
-//                                if (position == 0) {
-//                                    player2.setLocation(-100, -100);
-//                                } else {
-//                                    player2.setLocation(boardPositions[position]);
-//                                }
-//                            }
-//
-//                        } catch (Exception ex) {
-//                            txtMessages.append("Pozisyon ayrıştırılamadı.\n");
-//                        }
-//                    }
-//
-//                }
-//            } catch (IOException e) {
-//                txtMessages.append("Bağlantı koptu: " + e.getMessage() + "\n");
-//            }
-//        });
-//        listener.start();
-//    }
-//
-//    private void connectToServer() {
-//        try {
-//            socket = new Socket("localhost", 2000); // veya AWS IP
-//            out = new PrintWriter(socket.getOutputStream(), true);
-//            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//        } catch (IOException e) {
-//            txtMessages.append("Sunucuya bağlanılamadı.\n");
-//            btnSend.setEnabled(false);
-//        }
-//    }
-//
-//    private void sendNameToServer() {
-//        String name = txtName.getText().trim();
-//        if (!name.isEmpty()) {
-//            out.println(name); // sadece gönderiyoruz, cevabı arka plan thread'i dinliyor
-//        }
-//    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -400,20 +269,20 @@ public class ClientGUI extends javax.swing.JFrame {
                 .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(panel1Layout.createSequentialGroup()
                         .addComponent(jScrollPane1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btnRoll)
-                        .addGap(248, 248, 248))
+                        .addGap(18, 18, 18)
+                        .addComponent(btnRoll, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(225, 225, 225))
                     .addGroup(panel1Layout.createSequentialGroup()
                         .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(panel1Layout.createSequentialGroup()
                                 .addComponent(jLabel1)
-                                .addGap(46, 46, 46)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 165, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(26, 26, 26)
+                                .addGap(18, 18, 18)
                                 .addComponent(btnSend)
-                                .addGap(26, 26, 26)
+                                .addGap(103, 103, 103)
                                 .addComponent(btnRestartt, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(45, 45, 45))
+                                .addGap(10, 10, 10))
                             .addComponent(lbl_game, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addContainerGap(56, Short.MAX_VALUE))))
         );
@@ -428,10 +297,10 @@ public class ClientGUI extends javax.swing.JFrame {
                     .addComponent(btnRestartt))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(lbl_game, javax.swing.GroupLayout.DEFAULT_SIZE, 559, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnRoll)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnRoll, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(54, 54, 54))
         );
 
@@ -455,6 +324,7 @@ public class ClientGUI extends javax.swing.JFrame {
         sendNameToServer();
         btnSend.setEnabled(false); // sadece bir kez göndersin
         txtName.setEditable(false);
+
     }//GEN-LAST:event_btnSendActionPerformed
 
     private void txtNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNameActionPerformed
